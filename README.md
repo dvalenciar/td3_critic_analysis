@@ -3,12 +3,11 @@
 Analysis of using different configurations of Critics to improve TD3.
 
 
-- [ ] Mercury
-- [x] Venus
-- [x] Earth (Orbit/Moon)
-- [x] Mars
-- [ ] Jupiter
-- [ ] Saturn
-- [ ] Uranus
-- [ ] Neptune
-- [ ] Comet Haley
+- [x] Normal TD3 with two critics.
+- [ ] Ensemble of Critics.
+- [ ] Probability Critic.
+- [ ] Ensemble of Probability Critics.
+- [ ] Deterministic Critic with Q value for each element of the action vector.
+- [ ] 
+- [ ] Analysis of memory buffer sample.
+- [ ] Analysis of everything with images and intrinsic signals.
