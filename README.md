@@ -8,6 +8,5 @@ Analysis of using different configurations of Critics to improve TD3.
 - [ ] Probability Critic.
 - [ ] Ensemble of Probability Critics.
 - [ ] Deterministic Critic with Q value for each element of the action vector.
-- [ ] 
 - [ ] Analysis of memory buffer sample.
 - [ ] Analysis of everything with images and intrinsic signals.
