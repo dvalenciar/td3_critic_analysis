@@ -137,7 +137,7 @@ def train(env, agent, action_size, file_name, args):
 
         if done:
             episode_duration = time.time() - start_time
-            start_time = time.time()
+
             logging.info(f"TRAIN T:{total_step_counter} | Episode {episode_num + 1} was completed with {episode_timesteps} steps | Reward= {episode_reward:.3f} | Duration= {episode_duration:.2f} Sec")
 
             historical_reward_training["step"].append(total_step_counter)
@@ -150,8 +150,9 @@ def train(env, agent, action_size, file_name, args):
                 logging.info("--------------------------------------------")
 
             # Reset environment
-            time_step = env.reset()
-            state     = np.hstack(list(time_step.observation.values()))
+            start_time = time.time()
+            time_step  = env.reset()
+            state      = np.hstack(list(time_step.observation.values()))
             episode_reward    = 0
             episode_timesteps = 0
             episode_num       += 1

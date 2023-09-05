@@ -77,7 +77,7 @@ class TD3(object):
         with torch.no_grad():
             next_actions = self.target_actor_net(next_states)
             target_noise = 0.2 * torch.randn_like(next_actions)
-            target_noise = torch.clamp(target_noise, min=-0.5, max=0.5)  # todo have a look to this to ma ke sure is a tensor
+            target_noise = torch.clamp(target_noise, min=-0.5, max=0.5)
             next_actions = next_actions + target_noise
             next_actions = torch.clamp(next_actions, min=-1, max=1)
 
