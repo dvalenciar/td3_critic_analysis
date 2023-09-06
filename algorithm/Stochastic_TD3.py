@@ -82,11 +82,6 @@ class STC_TD3(object):
 
             u , std = self.target_critic_net(next_states, next_actions)
 
-            new_u   = u + rewards
-            new_std = std * self.gamma
-
-            target_distribution = torch.normal(new_u, new_std, scale=self.gamma)
-
 
 
 
