@@ -14,7 +14,9 @@ logging.basicConfig(level=logging.INFO)
 
 from dm_control import suite
 from memory import MemoryBuffer
+
 from algorithm import TD3
+from algorithm import STC_TD3
 
 def define_parse_args():
     parser = ArgumentParser()
@@ -208,7 +210,7 @@ def main():
 
     # ------------------------------------------------#
     logging.info(f" Initializing Algorithm.....")
-    agent = TD3(
+    agent = STC_TD3(
         observation_size=observation_size,
         action_num=action_size,
         device=device
@@ -216,7 +218,7 @@ def main():
     # ------------------------------------------------#
 
     date_time_str = datetime.now().strftime("%m_%d_%H_%M")
-    file_name = domain_name + "_" + task_name + "_" + "TD3" +"_" + str(date_time_str)
+    file_name = domain_name + "_" + task_name + "_" + "STC_TD3" +"_" + str(date_time_str)
 
     logging.info("Initializing Training Loop....")
     train(env, agent, action_size,file_name, args)

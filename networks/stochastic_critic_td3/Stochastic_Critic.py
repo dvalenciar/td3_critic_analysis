@@ -31,6 +31,6 @@ class Stochastic_Critic(nn.Module):
         obs_action = torch.cat([state, action], dim=1)
         u   = self.mean_layer(obs_action)
         std = self.std_layer(obs_action) + 1e-6
-        #print("i am std", std, "i am mean value", u)
+        #print("i am std", std)
         # return torch.distributions.Normal(u, std)
         return u, std

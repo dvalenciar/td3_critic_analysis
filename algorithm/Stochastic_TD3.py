@@ -57,6 +57,7 @@ class STC_TD3(object):
         return action
 
     def train_policy(self, experiences):
+
         self.learn_counter += 1
 
         states, actions, rewards, next_states, dones = experiences
@@ -81,13 +82,47 @@ class STC_TD3(object):
             next_actions = torch.clamp(next_actions, min=-1, max=1)
 
             u , std = self.target_critic_net(next_states, next_actions)
+            u_target   =  rewards +  self.gamma * (1 - dones) * u
+            std_target =  self.gamma * std
+            target_distribution = torch.distributions.normal.Normal(u_target, std_target)
+
+        u_current, std_current = self.critic_net(states, actions)
+        current_distribution = torch.distributions.normal.Normal(u_current, std_current)
+
+        # Compute critic loss
+        critic_loss = torch.distributions.kl_divergence(current_distribution, target_distribution).mean()
+
+        # Update the Critic
+        self.critic_net_optimiser.zero_grad()
+        critic_loss.backward()
+        self.critic_net_optimiser.step()
+
+
+        if self.learn_counter % self.policy_update_freq == 0:
+
+            # Update Actor
+            actor_q_u, actor_q_std = self.critic_net(states, self.actor_net(states))
+            actor_loss = -actor_q_u.mean()
+
+            self.actor_net_optimiser.zero_grad()
+            actor_loss.backward()
+            self.actor_net_optimiser.step()
+
+            for target_param, param in zip(self.target_critic_net.parameters(), self.critic_net.parameters()):
+                target_param.data.copy_(param.data * self.tau + target_param.data * (1.0 - self.tau))
+
+            for target_param, param in zip(self.target_actor_net.parameters(), self.actor_net.parameters()):
+                target_param.data.copy_(param.data * self.tau + target_param.data * (1.0 - self.tau))
 
 
 
+    def save_models(self, filename, filepath='models'):
+        path = f"{filepath}/models" if filepath != 'models' else filepath
+        dir_exists = os.path.exists(path)
 
+        if not dir_exists:
+            os.makedirs(path)
 
-            # target_q_values_one, target_q_values_two = self.target_critic_net(next_states, next_actions)
-            # target_q_values = torch.minimum(target_q_values_one, target_q_values_two)
-            #
-            # q_target = rewards + self.gamma * (1 - dones) * target_q_values
-
+        torch.save(self.actor_net.state_dict(), f'{path}/{filename}_actor.pht')
+        torch.save(self.critic_net.state_dict(), f'{path}/{filename}_critic.pht')
+        logging.info("models has been saved...")
