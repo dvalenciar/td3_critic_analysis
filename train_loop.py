@@ -20,7 +20,7 @@ from algorithm import STC_TD3
 
 def define_parse_args():
     parser = ArgumentParser()
-    parser.add_argument('--batch_size', type=int, default=128)
+    parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--G', type=int, default=1)
 
     parser.add_argument('--max_steps_training', type=int, default=1000000)
