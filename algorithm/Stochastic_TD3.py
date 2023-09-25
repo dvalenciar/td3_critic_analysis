@@ -23,11 +23,26 @@ class STC_TD3(object):
         self.actor_net        = Actor(observation_size=observation_size, action_num = action_num).to(device)
         self.target_actor_net = copy.deepcopy(self.actor_net).to(device)
 
-        self.critic_net        = Critic(observation_size=observation_size, action_num = action_num).to(device) # todo try to this as ensemble
+        self.critic_net        = Critic(observation_size=observation_size, action_num = action_num).to(device)
         self.target_critic_net = copy.deepcopy(self.critic_net).to(device)
 
         self.critic_net_two        = Critic(observation_size=observation_size, action_num = action_num).to(device)
         self.target_critic_net_two = copy.deepcopy(self.critic_net_two).to(device)
+
+
+        #-----------------------------------------#
+        # todo still under develop
+        self.ensemble_size    = 5
+        self.ensemble_critics = torch.nn.ModuleList()
+        critics = [Critic(observation_size=observation_size, action_num = action_num) for _ in range(self.ensemble_size)]
+        self.ensemble_critics.extend(critics)
+        self.ensemble_critics.to(device)
+
+        self.target_ensemble_critics = copy.deepcopy(self.ensemble_critics).to(device)
+
+        lr_ensemble_critic = 1e-3
+        self.ensemble_critics_optimizers = [torch.optim.Adam(self.ensemble_critics[i].parameters(), lr=lr_ensemble_critic) for i in range(self.ensemble_size)]
+        #-----------------------------------------#
 
         self.gamma = 0.99
         self.tau   = 0.005

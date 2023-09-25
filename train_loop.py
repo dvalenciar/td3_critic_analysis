@@ -27,7 +27,7 @@ def define_parse_args():
     parser.add_argument('--max_steps_pre_exploration', type=int, default=1000)
     parser.add_argument('--number_eval_episodes', type=int, default=10)
 
-    parser.add_argument('--seed', type=int, default=1)
+    parser.add_argument('--seed', type=int, default=123)
     parser.add_argument('--env',  type=str, default="ball_in_cup")
     parser.add_argument('--task', type=str, default="catch")
     args   = parser.parse_args()
@@ -221,7 +221,7 @@ def main():
     file_name = domain_name + "_" + task_name + "_" + "STC_TD3" +"_" + str(date_time_str)
 
     logging.info("Initializing Training Loop....")
-    train(env, agent, action_size,file_name, args)
+    #train(env, agent, action_size,file_name, args)
 
 
 
