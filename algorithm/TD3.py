@@ -17,9 +17,10 @@ from networks.normal_td3 import Critic
 
 class TD3(object):
     def __init__(self,
-                 observation_size,
-                 action_num,
-                 device):
+                 observation_size=10,
+                 action_num=4,
+                 device='cuda',
+                 ensemble_size=2):
 
 
         self.actor_net  = Actor(observation_size=observation_size, action_num = action_num).to(device)

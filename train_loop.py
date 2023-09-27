@@ -21,6 +21,7 @@ from algorithm import STC_TD3
 def define_parse_args():
     parser = ArgumentParser()
     parser.add_argument('--batch_size', type=int, default=64)
+    parser.add_argument('--ensemble_size', type=int, default=2)
     parser.add_argument('--G', type=int, default=1)
 
     parser.add_argument('--max_steps_training', type=int, default=1000000)
@@ -210,18 +211,22 @@ def main():
 
     # ------------------------------------------------#
     logging.info(f" Initializing Algorithm.....")
+
     agent = STC_TD3(
         observation_size=observation_size,
         action_num=action_size,
-        device=device
+        device=device,
+        ensemble_size=args.ensemble_size
     )
+
     # ------------------------------------------------#
 
     date_time_str = datetime.now().strftime("%m_%d_%H_%M")
-    file_name = domain_name + "_" + task_name + "_" + "STC_TD3" +"_" + str(date_time_str)
+    file_name = domain_name + "_" + task_name + "_" + "STC_TD3" +"_Ensemble_size_"+str(args.ensemble_size)+"_date_"+ str(date_time_str)
+
 
     logging.info("Initializing Training Loop....")
-    #train(env, agent, action_size,file_name, args)
+    train(env, agent, action_size, file_name, args)
 
 
 

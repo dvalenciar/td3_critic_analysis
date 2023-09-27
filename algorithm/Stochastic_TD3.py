@@ -9,57 +9,45 @@ import copy
 import logging
 import numpy as np
 import torch
-import torch.nn.functional as F
+
 
 from networks.stochastic_critic_td3 import Actor
 from networks.stochastic_critic_td3 import Stochastic_Critic as Critic
 
 class STC_TD3(object):
     def __init__(self,
-                 observation_size,
-                 action_num,
-                 device):
+                 observation_size=10,
+                 action_num=2,
+                 device='cuda',
+                 ensemble_size=2):
+
+        self.gamma = 0.99
+        self.tau   = 0.005
+        self.learn_counter      = 0
+        self.policy_update_freq = 2
+        self.action_num         = action_num
+        self.device             = device
+
 
         self.actor_net        = Actor(observation_size=observation_size, action_num = action_num).to(device)
         self.target_actor_net = copy.deepcopy(self.actor_net).to(device)
 
-        self.critic_net        = Critic(observation_size=observation_size, action_num = action_num).to(device)
-        self.target_critic_net = copy.deepcopy(self.critic_net).to(device)
+        lr_actor   = 1e-4
+        self.actor_net_optimiser = torch.optim.Adam(self.actor_net.parameters(), lr=lr_actor)
 
-        self.critic_net_two        = Critic(observation_size=observation_size, action_num = action_num).to(device)
-        self.target_critic_net_two = copy.deepcopy(self.critic_net_two).to(device)
-
-
-        #-----------------------------------------#
-        # todo still under develop
-        self.ensemble_size    = 5
+        # ------------- Ensemble of critics ------------------#
+        self.ensemble_size    = ensemble_size
         self.ensemble_critics = torch.nn.ModuleList()
         critics = [Critic(observation_size=observation_size, action_num = action_num) for _ in range(self.ensemble_size)]
         self.ensemble_critics.extend(critics)
         self.ensemble_critics.to(device)
 
+        # Ensemble of target critics
         self.target_ensemble_critics = copy.deepcopy(self.ensemble_critics).to(device)
 
         lr_ensemble_critic = 1e-3
         self.ensemble_critics_optimizers = [torch.optim.Adam(self.ensemble_critics[i].parameters(), lr=lr_ensemble_critic) for i in range(self.ensemble_size)]
         #-----------------------------------------#
-
-        self.gamma = 0.99
-        self.tau   = 0.005
-
-        self.learn_counter      = 0
-        self.policy_update_freq = 2
-
-        self.action_num = action_num
-        self.device     = device
-
-        lr_actor   = 1e-4
-        lr_critic  = 1e-3
-        self.actor_net_optimiser  = torch.optim.Adam(self.actor_net.parameters(),   lr=lr_actor)
-
-        self.critic_net_optimiser     = torch.optim.Adam(self.critic_net.parameters(),     lr=lr_critic)
-        self.critic_net_two_optimiser = torch.optim.Adam(self.critic_net_two.parameters(), lr=lr_critic)
-
 
     def select_action_from_policy(self, state, evaluation=False, noise_scale=0.1):
         self.actor_net.eval()
@@ -76,8 +64,8 @@ class STC_TD3(object):
         self.actor_net.train()
         return action
 
-    def train_policy(self, experiences):
 
+    def train_policy(self, experiences):
         self.learn_counter += 1
 
         states, actions, rewards, next_states, dones = experiences
@@ -94,74 +82,76 @@ class STC_TD3(object):
         rewards = rewards.unsqueeze(0).reshape(batch_size, 1)
         dones   = dones.unsqueeze(0).reshape(batch_size, 1)
 
-        with torch.no_grad():
+        with (torch.no_grad()):
             next_actions = self.target_actor_net(next_states)
             target_noise = 0.2 * torch.randn_like(next_actions)  # TODO what about this value 0.2 can be changed?
             target_noise = torch.clamp(target_noise, min=-0.5, max=0.5) # TODO same here
             next_actions = next_actions + target_noise
             next_actions = torch.clamp(next_actions, min=-1, max=1)
 
-            u , std         = self.target_critic_net(next_states, next_actions)
-            u_two , std_two = self.target_critic_net_two(next_states, next_actions)
+            u_set   = []
+            std_set = []
+            for target_critic_net in self.target_ensemble_critics:
+                u, std = target_critic_net(next_states, next_actions)
+                u_set.append(u)
+                std_set.append(std)
 
             # -------- Key part here -------------- #
-            # average the distribution to create a unique distribution, encapsulating the whole outputs
-            # this is not a mixture of gaussian mixture
-            u_aver   = (u + u_two) / 2
-            std_aver = (std + std_two) / 2
+            # mean value
+            # average the distributions to create a unique distribution, encapsulating the whole outputs
+            # note, this is not a mixture of gaussians
+            u_aver   = torch.mean(torch.concat(u_set, dim=1), dim=1).unsqueeze(0).reshape(batch_size, 1)
+            std_aver = torch.mean(torch.concat(std_set, dim=1), dim=1).unsqueeze(0).reshape(batch_size, 1)
 
+            # minimum value
+            #u_min =  torch.min(torch.concat(u_set, dim=1), dim=1).values.unsqueeze(0).reshape(batch_size, 1)
+            #std_min = what to do with the right std order, maybe need to take the de index value .index of the mean values
+
+            # kalman filter
+
+
+            # Create the target distribution = aX+b
             u_target   =  rewards +  self.gamma * u_aver * (1 - dones)
             std_target =  self.gamma * std_aver
-
-        #     # with  this did not work
-        #     # u_target   = rewards + self.gamma * (1 - dones) * u
-        #     # std_target = self.gamma * std * (1 - dones) + 1e-8
-
             target_distribution = torch.distributions.normal.Normal(u_target, std_target)
 
-        u_current, std_current = self.critic_net(states, actions)
-        current_distribution   = torch.distributions.normal.Normal(u_current, std_current)
+        for critic_net, critic_net_optimiser in zip(self.ensemble_critics, self.ensemble_critics_optimizers):
+            u_current, std_current = critic_net(states, actions)
+            current_distribution   = torch.distributions.normal.Normal(u_current, std_current)
 
-        u_current_two, std_current_two = self.critic_net_two(states, actions)
-        current_distribution_two       = torch.distributions.normal.Normal(u_current_two, std_current_two)
+            # Compute each critic loss
+            critic_individual_loss = torch.distributions.kl_divergence(current_distribution, target_distribution).mean() # todo try other divergence too
 
-        # Compute critic loss
-        critic_loss     = torch.distributions.kl_divergence(current_distribution, target_distribution).mean()  # todo try other divergence too
-        critic_loss_two = torch.distributions.kl_divergence(current_distribution_two, target_distribution).mean()
+            # Update each Critic
+            critic_net_optimiser.zero_grad()
+            critic_individual_loss.backward()
+            critic_net_optimiser.step()
 
-        # Update the Critic
-        self.critic_net_optimiser.zero_grad()
-        critic_loss.backward()
-        self.critic_net_optimiser.step()
-
-        self.critic_net_two_optimiser.zero_grad()
-        critic_loss_two.backward()
-        self.critic_net_two_optimiser.step()
 
         if self.learn_counter % self.policy_update_freq == 0:  # todo try if i change the freq update
-            # Update Actor
-            actor_q_u, actor_q_std         = self.critic_net(states, self.actor_net(states))
-            actor_q_u_two, actor_q_std_two = self.critic_net_two(states, self.actor_net(states))
 
-            actor_q_u_aver   = (actor_q_u + actor_q_u_two) / 2
-            actor_q_std_aver = (actor_q_std + actor_q_std_two) / 2
+            actor_q_u_set = []
+            for critic_net in self.ensemble_critics:
+                actor_q_u, actor_q_std = critic_net(states, self.actor_net(states))
+                actor_q_u_set.append(actor_q_u)
+            actor_q_u_aver = torch.mean(torch.concat(actor_q_u_set, dim=1), dim=1).unsqueeze(0).reshape(batch_size, 1)
+            actor_loss     = -actor_q_u_aver.mean()
 
             #actor_distribution = torch.distributions.normal.Normal(actor_q_u_aver, actor_q_std_aver)  # todo what can i do with this?
-            actor_loss = -actor_q_u_aver.mean()
 
+            # Update Actor
             self.actor_net_optimiser.zero_grad()
             actor_loss.backward()
             self.actor_net_optimiser.step()
 
-            for target_param, param in zip(self.target_critic_net.parameters(), self.critic_net.parameters()):
-                target_param.data.copy_(param.data * self.tau + target_param.data * (1.0 - self.tau))
+            # Update ensemble of target critics
+            for critic_net, target_critic_net in zip (self.ensemble_critics, self.target_ensemble_critics):
+                for target_param, param in zip(target_critic_net.parameters(), critic_net.parameters()):
+                    target_param.data.copy_(param.data * self.tau + target_param.data * (1.0 - self.tau))
 
-            for target_param, param in zip(self.target_critic_net_two.parameters(), self.critic_net_two.parameters()):
-                target_param.data.copy_(param.data * self.tau + target_param.data * (1.0 - self.tau))
-
+            # Update target actor
             for target_param, param in zip(self.target_actor_net.parameters(), self.actor_net.parameters()):
                 target_param.data.copy_(param.data * self.tau + target_param.data * (1.0 - self.tau))
-
 
 
     def save_models(self, filename, filepath='models'):
@@ -172,5 +162,5 @@ class STC_TD3(object):
             os.makedirs(path)
 
         torch.save(self.actor_net.state_dict(), f'{path}/{filename}_actor.pht')
-        torch.save(self.critic_net.state_dict(), f'{path}/{filename}_critic.pht')
+        torch.save(self.ensemble_critics.state_dict(),f'models/{filename}_ensemble.pht')
         logging.info("models has been saved...")
