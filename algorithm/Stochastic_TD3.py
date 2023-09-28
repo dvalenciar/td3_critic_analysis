@@ -66,10 +66,11 @@ class STC_TD3(object):
         return action
 
     def fusion_kalman(self, std_1, mean_1, std_2, mean_2):
+
         kalman_gain     = (std_1 ** 2) / (std_1 ** 2 + std_2 ** 2)
-        fusion_mean     = mean_1 + kalman_gain(mean_2 - mean_1)
+        fusion_mean     = mean_1 + kalman_gain * (mean_2 - mean_1)
         fusion_variance = (1 - kalman_gain) * std_1 ** 2
-        fusion_std      = math.sqrt(fusion_variance)
+        fusion_std      = torch.sqrt(fusion_variance)
         return fusion_mean, fusion_std
 
 
@@ -105,36 +106,36 @@ class STC_TD3(object):
                 std_set.append(std)
 
             # -------- Key part here -------------- #
+
+            # Kalman Filter
+            for i in range (len (u_set) - 1):
+                if i == 0:
+                    x_1 , std_1 = u_set[i], std_set[i]
+                    x_2 , std_2 = u_set[i + 1], std_set[i+1]
+                    fusion_u , fusion_std  = self.fusion_kalman(std_1, x_1, std_2, x_2)
+                else:
+                    x_2, std_2 = u_set[i + 1], std_set[i + 1]
+                    fusion_u, fusion_std = self.fusion_kalman(fusion_std, fusion_u, std_2, x_2)
+
             # mean value
             # average the distributions to create a unique distribution, encapsulating the whole outputs
             # note, this is not a mixture of gaussians
             # problem with avr= too much protagonism could be given a curve with terrible std and while could be otjer with small std
             # and if we take the avg we can compute this equally
-            u_aver   = torch.mean(torch.concat(u_set, dim=1), dim=1).unsqueeze(0).reshape(batch_size, 1)
-            std_aver = torch.mean(torch.concat(std_set, dim=1), dim=1).unsqueeze(0).reshape(batch_size, 1)
+            # u_aver   = torch.mean(torch.concat(u_set, dim=1), dim=1).unsqueeze(0).reshape(batch_size, 1)
+            # std_aver = torch.mean(torch.concat(std_set, dim=1), dim=1).unsqueeze(0).reshape(batch_size, 1)
 
             # minimum value
             #u_min =  torch.min(torch.concat(u_set, dim=1), dim=1).values.unsqueeze(0).reshape(batch_size, 1)
             #std_min = what to do with the right std order, maybe need to take the de index value .index of the mean values
             # also one problem with min is the ensemble loses it power and we considered one sible value
 
-            print("-------------------------------")
-            # kalman filter here
-            a = torch.concat(u_set, dim=1)
-            b = torch.concat(std_set, dim=1)
-            print(u_set)
-            print(a)
-
-            for i in range (len(u_set)):
-                print(u_set[i]) # con esto puedo sacar mas facil
-
-            print("********************************")
-
 
 
             # Create the target distribution = aX+b
-            u_target   =  rewards +  self.gamma * u_aver * (1 - dones)
-            std_target =  self.gamma * std_aver
+            u_target   =  rewards +  self.gamma * fusion_u * (1 - dones)
+            std_target =  self.gamma * fusion_std
+
             target_distribution = torch.distributions.normal.Normal(u_target, std_target)
 
         for critic_net, critic_net_optimiser in zip(self.ensemble_critics, self.ensemble_critics_optimizers):
