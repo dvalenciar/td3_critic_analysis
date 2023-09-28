@@ -9,6 +9,7 @@ import copy
 import logging
 import numpy as np
 import torch
+import math
 
 
 from networks.stochastic_critic_td3 import Actor
@@ -64,6 +65,13 @@ class STC_TD3(object):
         self.actor_net.train()
         return action
 
+    def fusion_kalman(self, std_1, mean_1, std_2, mean_2):
+        kalman_gain     = (std_1 ** 2) / (std_1 ** 2 + std_2 ** 2)
+        fusion_mean     = mean_1 + kalman_gain(mean_2 - mean_1)
+        fusion_variance = (1 - kalman_gain) * std_1 ** 2
+        fusion_std      = math.sqrt(fusion_variance)
+        return fusion_mean, fusion_std
+
 
     def train_policy(self, experiences):
         self.learn_counter += 1
@@ -100,14 +108,28 @@ class STC_TD3(object):
             # mean value
             # average the distributions to create a unique distribution, encapsulating the whole outputs
             # note, this is not a mixture of gaussians
+            # problem with avr= too much protagonism could be given a curve with terrible std and while could be otjer with small std
+            # and if we take the avg we can compute this equally
             u_aver   = torch.mean(torch.concat(u_set, dim=1), dim=1).unsqueeze(0).reshape(batch_size, 1)
             std_aver = torch.mean(torch.concat(std_set, dim=1), dim=1).unsqueeze(0).reshape(batch_size, 1)
 
             # minimum value
             #u_min =  torch.min(torch.concat(u_set, dim=1), dim=1).values.unsqueeze(0).reshape(batch_size, 1)
             #std_min = what to do with the right std order, maybe need to take the de index value .index of the mean values
+            # also one problem with min is the ensemble loses it power and we considered one sible value
 
-            # kalman filter
+            print("-------------------------------")
+            # kalman filter here
+            a = torch.concat(u_set, dim=1)
+            b = torch.concat(std_set, dim=1)
+            print(u_set)
+            print(a)
+
+            for i in range (len(u_set)):
+                print(u_set[i]) # con esto puedo sacar mas facil
+
+            print("********************************")
+
 
 
             # Create the target distribution = aX+b
