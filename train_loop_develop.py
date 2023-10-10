@@ -28,9 +28,10 @@ def define_parse_args():
     parser.add_argument('--max_steps_pre_exploration', type=int, default=1000)
     parser.add_argument('--number_eval_episodes', type=int, default=10)
 
-    parser.add_argument('--seed', type=int, default=123)
-    parser.add_argument('--env',  type=str, default="ball_in_cup")
-    parser.add_argument('--task', type=str, default="catch")
+    parser.add_argument('--seed',      type=int, default=555)
+    parser.add_argument('--env',       type=str, default="ball_in_cup")
+    parser.add_argument('--task',      type=str, default="catch")
+    parser.add_argument('--algorithm', type=str, default="STC_TD3")
     args   = parser.parse_args()
     return args
 
@@ -195,6 +196,7 @@ def main():
     np.random.seed(seed)
     random.seed(seed)
     # ------------------------------------------------#
+
     # ------------------------------------------------#
     # Create Directories
     logging.info(f" Creating Folders")
@@ -212,17 +214,28 @@ def main():
     # ------------------------------------------------#
     logging.info(f" Initializing Algorithm.....")
 
-    agent = STC_TD3(
-        observation_size=observation_size,
-        action_num=action_size,
-        device=device,
-        ensemble_size=args.ensemble_size
-    )
+    if args.algorithm == "TD3":
+        agent = TD3(
+            observation_size=observation_size,
+            action_num=action_size,
+            device=device,
+        )
 
+    elif args.algorithm == "STC_TD3":
+        agent = STC_TD3(
+            observation_size=observation_size,
+            action_num=action_size,
+            device=device,
+            ensemble_size=args.ensemble_size
+        )
+
+    else:
+        logging.info("Please select an algorithm")
+        exit()
     # ------------------------------------------------#
 
     date_time_str = datetime.now().strftime("%m_%d_%H_%M")
-    file_name = domain_name + "_" + task_name + "_" + "STC_TD3" +"_Ensemble_size_"+str(args.ensemble_size)+"_date_"+ str(date_time_str)
+    file_name     = domain_name + "_" + task_name + "_" +str(args.algorithm)+"_Ensemble_size_"+str(args.ensemble_size)+"_date_"+ str(date_time_str)+"_seed_"+str(args.seed)
 
 
     logging.info("Initializing Training Loop....")

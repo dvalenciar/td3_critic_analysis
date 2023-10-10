@@ -1,5 +1,4 @@
 
-import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -29,11 +28,20 @@ def plot_function(data_frame):
 
 folder_results_path = '/home/david_lab/UoA_Repository/td3_critic_analysis/data_results/'
 
+#curve_data_name ='reacher_hard_TD3_Ensemble_size_2_date_10_09_14_10_evaluation_seed_123'
+#curve_data_name ='reacher_hard_STC_TD3_Ensemble_size_2_date_10_09_14_10_evaluation_seed_123'
+#curve_data_name ='reacher_hard_STC_TD3_Ensemble_size_5_date_10_09_17_05_evaluation_seed_123'
+#curve_data_name ='reacher_hard_STC_TD3_Ensemble_size_10_date_10_09_17_04_evaluation_seed_123'
 
-curve_data_name ='ball_in_cup_catch_STC_TD3_Ensemble_size_10_date_09_27_13_34_evaluation'
-#curve_data_name ='ball_in_cup_catch_STC_TD3_Ensemble_size_5_date_09_26_17_14_evaluation'
-#curve_data_name ='ball_in_cup_catch_STC_TD3_Ensemble_size_3_date_09_26_17_14_evaluation'
-#curve_data_name ='ball_in_cup_catch_STC_TD3_Ensemble_size_2_date_09_26_17_14_evaluation'
+#curve_data_name ='reacher_hard_TD3_Ensemble_size_2_date_10_10_09_38_seed_753_evaluation'
+#curve_data_name ='reacher_hard_TD3_Ensemble_size_2_date_10_09_14_10_evaluation_seed_123'
+
+#curve_data_name ='reacher_hard_STC_TD3_Ensemble_size_2_date_10_10_09_38_seed_753_evaluation'
+#curve_data_name ='reacher_hard_STC_TD3_Ensemble_size_2_date_10_10_10_55_seed_753_evaluation'
+
+#curve_data_name ='reacher_hard_STC_TD3_Ensemble_size_5_date_10_10_11_19_seed_753_evaluation'
+#curve_data_name ='reacher_hard_STC_TD3_Ensemble_size_5_date_10_10_09_38_seed_753_evaluation'
+
 
 
 data_1 = pd.read_csv(folder_results_path+curve_data_name)

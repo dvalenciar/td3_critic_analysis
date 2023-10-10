@@ -1,7 +1,7 @@
+
 """
 Stochastic TD3
 Here the critic return a probability distribution.
-A single critic is used
 """
 
 import os
@@ -9,11 +9,10 @@ import copy
 import logging
 import numpy as np
 import torch
-import math
-
 
 from networks.stochastic_critic_td3 import Actor
 from networks.stochastic_critic_td3 import Stochastic_Critic as Critic
+
 
 class STC_TD3(object):
     def __init__(self,
@@ -28,7 +27,6 @@ class STC_TD3(object):
         self.policy_update_freq = 2
         self.action_num         = action_num
         self.device             = device
-
 
         self.actor_net        = Actor(observation_size=observation_size, action_num = action_num).to(device)
         self.target_actor_net = copy.deepcopy(self.actor_net).to(device)
@@ -66,7 +64,6 @@ class STC_TD3(object):
         return action
 
     def fusion_kalman(self, std_1, mean_1, std_2, mean_2):
-
         kalman_gain     = (std_1 ** 2) / (std_1 ** 2 + std_2 ** 2)
         fusion_mean     = mean_1 + kalman_gain * (mean_2 - mean_1)
         fusion_variance = (1 - kalman_gain) * std_1 ** 2
@@ -75,6 +72,7 @@ class STC_TD3(object):
 
 
     def train_policy(self, experiences):
+
         self.learn_counter += 1
 
         states, actions, rewards, next_states, dones = experiences
@@ -106,7 +104,6 @@ class STC_TD3(object):
                 std_set.append(std)
 
             # -------- Key part here -------------- #
-
             # Kalman Filter
             for i in range (len (u_set) - 1):
                 if i == 0:
@@ -131,7 +128,6 @@ class STC_TD3(object):
             # also one problem with min is the ensemble loses it power and we considered one sible value
 
 
-
             # Create the target distribution = aX+b
             u_target   =  rewards +  self.gamma * fusion_u * (1 - dones)
             std_target =  self.gamma * fusion_std
@@ -143,7 +139,7 @@ class STC_TD3(object):
             current_distribution   = torch.distributions.normal.Normal(u_current, std_current)
 
             # Compute each critic loss
-            critic_individual_loss = torch.distributions.kl_divergence(current_distribution, target_distribution).mean() # todo try other divergence too
+            critic_individual_loss = torch.distributions.kl.kl_divergence(current_distribution, target_distribution).mean() # todo try other divergence too
 
             # Update each Critic
             critic_net_optimiser.zero_grad()
@@ -152,15 +148,28 @@ class STC_TD3(object):
 
 
         if self.learn_counter % self.policy_update_freq == 0:  # todo try if i change the freq update
-
-            actor_q_u_set = []
+            actor_q_u_set   = []
+            actor_q_std_set = []
             for critic_net in self.ensemble_critics:
                 actor_q_u, actor_q_std = critic_net(states, self.actor_net(states))
                 actor_q_u_set.append(actor_q_u)
-            actor_q_u_aver = torch.mean(torch.concat(actor_q_u_set, dim=1), dim=1).unsqueeze(0).reshape(batch_size, 1)
-            actor_loss     = -actor_q_u_aver.mean()
+                actor_q_std_set.append(actor_q_std)
 
-            #actor_distribution = torch.distributions.normal.Normal(actor_q_u_aver, actor_q_std_aver)  # todo what can i do with this?
+            # mean of the means of each critic
+            # actor_q_u_aver = torch.mean(torch.concat(actor_q_u_set, dim=1), dim=1).unsqueeze(0).reshape(batch_size, 1)
+            # actor_loss     = -actor_q_u_aver.mean()
+
+            # kalman filter combination of all critics and then a single mean
+            for i in range (len (actor_q_u_set) - 1):
+                if i == 0:
+                    x_1_a , std_1_a = actor_q_u_set[i], actor_q_std_set[i]
+                    x_2_a , std_2_a = actor_q_u_set[i + 1], actor_q_std_set[i+1]
+                    fusion_u_a , fusion_std_a  = self.fusion_kalman(std_1_a, x_1_a, std_2_a, x_2_a)
+                else:
+                    x_2_a, std_2_a = actor_q_u_set[i + 1], actor_q_std_set[i + 1]
+                    fusion_u_a, fusion_std_a = self.fusion_kalman(fusion_std_a, fusion_u_a, std_2_a, x_2_a)
+
+            actor_loss  = -fusion_u_a.mean()
 
             # Update Actor
             self.actor_net_optimiser.zero_grad()
