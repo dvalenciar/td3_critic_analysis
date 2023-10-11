@@ -92,7 +92,7 @@ class STC_TD3(object):
         with (torch.no_grad()):
             next_actions = self.target_actor_net(next_states)
             target_noise = 0.2 * torch.randn_like(next_actions)  # TODO what about this value 0.2 can be changed?
-            target_noise = torch.clamp(target_noise, min=-0.5, max=0.5) # TODO same here
+            target_noise = torch.clamp(target_noise, min=-0.5, max=0.5)
             next_actions = next_actions + target_noise
             next_actions = torch.clamp(next_actions, min=-1, max=1)
 
@@ -113,26 +113,23 @@ class STC_TD3(object):
                 else:
                     x_2, std_2 = u_set[i + 1], std_set[i + 1]
                     fusion_u, fusion_std = self.fusion_kalman(fusion_std, fusion_u, std_2, x_2)
+            # -----------------------------------------#
 
             # mean value
+            # -------------------------------------------------------------------------------------------------#
             # average the distributions to create a unique distribution, encapsulating the whole outputs
-            # note, this is not a mixture of gaussians
-            # problem with avr= too much protagonism could be given a curve with terrible std and while could be otjer with small std
-            # and if we take the avg we can compute this equally
+            # note, this is not a mixture of gaussians,
+            # problem with avr= too much protagonism could be given a curve with terrible std and while could be others with small std
+            # and if we take the avg we will compute this equally
             # u_aver   = torch.mean(torch.concat(u_set, dim=1), dim=1).unsqueeze(0).reshape(batch_size, 1)
             # std_aver = torch.mean(torch.concat(std_set, dim=1), dim=1).unsqueeze(0).reshape(batch_size, 1)
-
-            # minimum value
-            #u_min =  torch.min(torch.concat(u_set, dim=1), dim=1).values.unsqueeze(0).reshape(batch_size, 1)
-            #std_min = what to do with the right std order, maybe need to take the de index value .index of the mean values
-            # also one problem with min is the ensemble loses it power and we considered one sible value
-
+            # -------------------------------------------------------------------------------------------------#
 
             # Create the target distribution = aX+b
             u_target   =  rewards +  self.gamma * fusion_u * (1 - dones)
             std_target =  self.gamma * fusion_std
-
             target_distribution = torch.distributions.normal.Normal(u_target, std_target)
+
 
         for critic_net, critic_net_optimiser in zip(self.ensemble_critics, self.ensemble_critics_optimizers):
             u_current, std_current = critic_net(states, actions)

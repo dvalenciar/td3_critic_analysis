@@ -20,7 +20,7 @@ from algorithm import STC_TD3
 
 def define_parse_args():
     parser = ArgumentParser()
-    parser.add_argument('--batch_size', type=int, default=64)
+    parser.add_argument('--batch_size', type=int, default=128)
     parser.add_argument('--ensemble_size', type=int, default=2)
     parser.add_argument('--G', type=int, default=1)
 
@@ -236,7 +236,6 @@ def main():
 
     date_time_str = datetime.now().strftime("%m_%d_%H_%M")
     file_name     = domain_name + "_" + task_name + "_" +str(args.algorithm)+"_Ensemble_size_"+str(args.ensemble_size)+"_date_"+ str(date_time_str)+"_seed_"+str(args.seed)
-
 
     logging.info("Initializing Training Loop....")
     train(env, agent, action_size, file_name, args)
