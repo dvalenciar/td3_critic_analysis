@@ -26,21 +26,20 @@ def plot_function(data_frame):
 
 
 
-folder_results_path = '/home/david_lab/UoA_Repository/td3_critic_analysis/data_results/'
+#folder_results_path = '/home/david_lab/UoA_Repository/td3_critic_analysis/data_results/TD3/walker_walk/'
 
-#curve_data_name ='reacher_hard_TD3_Ensemble_size_2_date_10_09_14_10_evaluation_seed_123'
-#curve_data_name ='reacher_hard_STC_TD3_Ensemble_size_2_date_10_09_14_10_evaluation_seed_123'
-#curve_data_name ='reacher_hard_STC_TD3_Ensemble_size_5_date_10_09_17_05_evaluation_seed_123'
-#curve_data_name ='reacher_hard_STC_TD3_Ensemble_size_10_date_10_09_17_04_evaluation_seed_123'
+#curve_data_name ='/seed_10/walker_walk_TD3_Ensemble_size_2_date_10_11_10_38_seed_10_evaluation'
+#curve_data_name ='/seed_25/walker_walk_TD3_Ensemble_size_2_date_10_11_10_38_seed_25_evaluation'
+#curve_data_name ='/seed_35/walker_walk_TD3_Ensemble_size_2_date_10_11_11_05_seed_35_evaluation'
+#curve_data_name ='/seed_45/walker_walk_TD3_Ensemble_size_2_date_10_11_11_05_seed_45_evaluation'
+#curve_data_name ='/seed_55/walker_walk_TD3_Ensemble_size_2_date_10_11_10_38_seed_55_evaluation'
 
-#curve_data_name ='reacher_hard_TD3_Ensemble_size_2_date_10_10_09_38_seed_753_evaluation'
-#curve_data_name ='reacher_hard_TD3_Ensemble_size_2_date_10_09_14_10_evaluation_seed_123'
 
-#curve_data_name ='reacher_hard_STC_TD3_Ensemble_size_2_date_10_10_09_38_seed_753_evaluation'
-#curve_data_name ='reacher_hard_STC_TD3_Ensemble_size_2_date_10_10_10_55_seed_753_evaluation'
-
-#curve_data_name ='reacher_hard_STC_TD3_Ensemble_size_5_date_10_10_11_19_seed_753_evaluation'
-#curve_data_name ='reacher_hard_STC_TD3_Ensemble_size_5_date_10_10_09_38_seed_753_evaluation'
+folder_results_path = '/home/david_lab/UoA_Repository/td3_critic_analysis/data_results/STD3_Ensemble_2/walker_walk/'
+#curve_data_name ='/seed_10/walker_walk_STC_TD3_Ensemble_size_2_date_10_11_13_34_seed_10_evaluation'
+#curve_data_name ='/seed_25/walker_walk_STC_TD3_Ensemble_size_2_date_10_11_13_34_seed_25_evaluation'
+#curve_data_name ='/seed_25/walker_walk_STC_TD3_Ensemble_size_2_date_10_11_13_34_seed_25_evaluation'
+curve_data_name ='/seed_45/walker_walk_STC_TD3_Ensemble_size_2_date_10_11_13_45_seed_45_evaluation'
 
 
 
