@@ -12,9 +12,11 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 from dm_control import suite
-from memory import MemoryBuffer
 
-from algorithm import TD3
+from cares_reinforcement_learning.util import MemoryFactory
+#from memory import MemoryBuffer
+
+#from algorithm import TD3
 from algorithm import STC_TD3
 
 def define_parse_args():
@@ -27,9 +29,9 @@ def define_parse_args():
     parser.add_argument('--max_steps_pre_exploration', type=int, default=1000)
     parser.add_argument('--number_eval_episodes', type=int, default=10)
 
-    parser.add_argument('--seed',      type=int, default=555)
-    parser.add_argument('--env',       type=str, default="ball_in_cup")
-    parser.add_argument('--task',      type=str, default="catch")
+    parser.add_argument('--seed',      type=int, default=25)
+    parser.add_argument('--env',       type=str, default="walker")
+    parser.add_argument('--task',      type=str, default="walk")
     parser.add_argument('--algorithm', type=str, default="STC_TD3")
     args   = parser.parse_args()
     return args
@@ -92,7 +94,10 @@ def train(env, agent, action_size, file_name, args):
 
     # Needed classes
     # ------------------------------------#
-    memory = MemoryBuffer()
+    #memory = MemoryBuffer()
+    memory_factory = MemoryFactory()
+    memory = memory_factory.create_memory("MemoryBuffer", args)
+
 
     # Training Loop
     # ------------------------------------#
