@@ -8,6 +8,7 @@ from cares_reinforcement_learning.util import MemoryFactory
 from cares_reinforcement_learning.util import Record
 from cares_reinforcement_learning.util import EnvironmentFactory
 from cares_reinforcement_learning.util import arguement_parser as ap
+from cares_reinforcement_learning.util import helpers as hlp
 
 from algorithm import STC_TD3
 
@@ -21,6 +22,7 @@ from datetime import datetime
 
 def set_seed(seed):
     torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
     np.random.seed(seed)
     random.seed(seed)
 
@@ -61,7 +63,9 @@ def main():
     training_iterations = args['number_training_iterations']
     for training_iteration in range(0, training_iterations):
         logging.info(f"Training iteration {training_iteration+1}/{training_iterations} with Seed: {args['seed']}")
-        set_seed(args['seed'])
+        #set_seed(args['seed'])
+
+        hlp.set_seed(args['seed'])
         env.set_seed(args['seed'])
 
         logging.info(f"Algorithm: {args['algorithm']}")
