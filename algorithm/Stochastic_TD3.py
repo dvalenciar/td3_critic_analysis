@@ -13,7 +13,6 @@ import torch
 from networks.stochastic_critic_td3 import Actor
 from networks.stochastic_critic_td3 import Stochastic_Critic as Critic
 
-
 class STC_TD3(object):
     def __init__(self,
                  observation_size=10,
