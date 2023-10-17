@@ -9,10 +9,13 @@ from cares_reinforcement_learning.util import Record
 from cares_reinforcement_learning.util import EnvironmentFactory
 from cares_reinforcement_learning.util import arguement_parser as ap
 from cares_reinforcement_learning.util import helpers as hlp
+<<<<<<< HEAD
 from cares_reinforcement_learning.util.configurations import AlgorithmConfig
 
 import cares_reinforcement_learning.util.configurations as configurations
 from cares_reinforcement_learning.util.configurations import TrainingConfig, AlgorithmConfig, EnvironmentConfig
+=======
+>>>>>>> 3fcfe71692f8c908774d6eecb9ec3a337cca526e
 
 from algorithm import STC_TD3
 
@@ -26,6 +29,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
+<<<<<<< HEAD
 class STC_TD3Config(AlgorithmConfig):
     actor_lr: Optional[float] = 1e-4
     critic_lr: Optional[float] = 1e-3
@@ -36,6 +40,13 @@ class STC_TD3Config(AlgorithmConfig):
     ensemble_size: Optional[int] = 2
     
     memory: Optional[str] = "MemoryBuffer"
+=======
+def set_seed(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+>>>>>>> 3fcfe71692f8c908774d6eecb9ec3a337cca526e
 
 def create_parser():
     env_parser = ap.training_parser()
@@ -76,9 +87,17 @@ def main():
 
     seed = training_config.seed
     for training_iteration in range(0, training_iterations):
+<<<<<<< HEAD
         logging.info(f"Training iteration {training_iteration+1}/{training_iterations} with Seed: {seed}")
         hlp.set_seed(seed)
         env.set_seed(seed)
+=======
+        logging.info(f"Training iteration {training_iteration+1}/{training_iterations} with Seed: {args['seed']}")
+        #set_seed(args['seed'])
+
+        hlp.set_seed(args['seed'])
+        env.set_seed(args['seed'])
+>>>>>>> 3fcfe71692f8c908774d6eecb9ec3a337cca526e
 
         logging.info(f"Algorithm: {alg_config.algorithm}")
         agent = network_factory.create_network(env.observation_space, env.action_num, alg_config)
