@@ -190,5 +190,6 @@ class STC_TD3(object):
             os.makedirs(path)
 
         torch.save(self.actor_net.state_dict(), f'{path}/{filename}_actor.pht')
-        torch.save(self.ensemble_critics.state_dict(),f'models/{filename}_ensemble.pht')
+        torch.save(self.ensemble_critics.state_dict(),f'{path}/{filename}_ensemble.pht')
+
         logging.info("models has been saved...")
