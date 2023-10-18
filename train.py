@@ -7,9 +7,8 @@ from cares_reinforcement_learning.util import NetworkFactory
 from cares_reinforcement_learning.util import MemoryFactory
 from cares_reinforcement_learning.util import Record
 from cares_reinforcement_learning.util import EnvironmentFactory
-from cares_reinforcement_learning.util import arguement_parser as ap
 from cares_reinforcement_learning.util import helpers as hlp
-from cares_reinforcement_learning.util.configurations import AlgorithmConfig
+from cares_reinforcement_learning.util import RLParser
 
 import cares_reinforcement_learning.util.configurations as configurations
 from cares_reinforcement_learning.util.configurations import TrainingConfig, AlgorithmConfig, EnvironmentConfig
@@ -27,6 +26,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 
 class STC_TD3Config(AlgorithmConfig):
+    algorithm: str = Field("STC_TD3", Literal=True)
     actor_lr: Optional[float] = 1e-4
     critic_lr: Optional[float] = 1e-3
     
@@ -37,31 +37,10 @@ class STC_TD3Config(AlgorithmConfig):
     
     memory: Optional[str] = "MemoryBuffer"
 
-def create_parser():
-    env_parser = ap.training_parser()
-    alg_parser, alg_parsers = ap.algorithm_args(parent_parser=env_parser)
-    
-    # create the parser for STC_TD3 with default parameters
-    parser_STC_TD3 = alg_parsers.add_parser('STC_TD3', help='STC_TD3', parents=[env_parser])
-    parser_STC_TD3.add_argument('--ensemble_size', type=int, default=2)
-
-    parser = ap.openai_dmcs_args(parent_parser=alg_parser)
-    return parser
-
 def main():
-    parser = argparse.ArgumentParser(add_help=False)  # Add an argument
-    parser.add_argument('-c', '--configuration_files', action='store_true', default=False)
-    args, rest = parser.parse_known_args()
-    args = ap.parse_args(args, rest, parser=create_parser())
-
-    env_config = EnvironmentConfig.model_validate(args)
-    training_config = TrainingConfig.model_validate(args)
-    alg_config = configurations.create_algorithm_config(args)
-
-    if alg_config is None and args["algorithm"] == "STC_TD3":
-        alg_config = STC_TD3Config.model_validate(args)
-    else:
-        raise ValueError(f"Unkown algorithm {args['algorithm']}")
+    parser = RLParser()
+    parser.add_algorithm(STC_TD3Config)
+    env_config, training_config, alg_config = parser.parse_args()
     
     env_factory = EnvironmentFactory()
     network_factory = NetworkFactory()
@@ -98,7 +77,13 @@ def main():
 
         #create the record class - standardised results tracking
         log_dir = f"{seed}"
-        record = Record(glob_log_dir=glob_log_dir, log_dir=log_dir, network=agent, plot_frequency=training_config.plot_frequency, checkpoint_frequency=training_config.checkpoint_frequency)
+        record = Record(glob_log_dir=glob_log_dir, 
+                        log_dir=log_dir, 
+                        algorithm=alg_config.algorithm, 
+                        task=env_config.task, 
+                        network=agent, 
+                        plot_frequency=training_config.plot_frequency, 
+                        checkpoint_frequency=training_config.checkpoint_frequency)
         record.save_config(env_config, "env_config")
         record.save_config(training_config, "train_config")
         record.save_config(alg_config, "alg_config")
