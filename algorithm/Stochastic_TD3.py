@@ -181,7 +181,6 @@ class STC_TD3(object):
             for target_param, param in zip(self.target_actor_net.parameters(), self.actor_net.parameters()):
                 target_param.data.copy_(param.data * self.tau + target_param.data * (1.0 - self.tau))
 
-
     def save_models(self, filename, filepath='models'):
         path = f"{filepath}/models" if filepath != 'models' else filepath
         dir_exists = os.path.exists(path)
@@ -191,5 +190,4 @@ class STC_TD3(object):
 
         torch.save(self.actor_net.state_dict(), f'{path}/{filename}_actor.pht')
         torch.save(self.ensemble_critics.state_dict(),f'{path}/{filename}_ensemble.pht')
-
         logging.info("models has been saved...")
