@@ -29,7 +29,7 @@ def define_parse_args():
     parser.add_argument('--max_steps_pre_exploration', type=int, default=1000)
     parser.add_argument('--number_eval_episodes', type=int, default=10)
 
-    parser.add_argument('--seed',      type=int, default=25)
+    parser.add_argument('--seed',      type=int, default=10)
     parser.add_argument('--env',       type=str, default="walker")
     parser.add_argument('--task',      type=str, default="walk")
     parser.add_argument('--algorithm', type=str, default="STC_TD3")
@@ -117,6 +117,7 @@ def train(env, agent, action_size, file_name, args):
     state      = np.hstack(list(time_step.observation.values()))
 
     for total_step_counter in range(1, int(max_steps_training) + 1):
+
         episode_timesteps += 1
 
         if total_step_counter <= max_steps_pre_exploration:

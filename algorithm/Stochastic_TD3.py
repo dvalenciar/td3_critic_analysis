@@ -13,6 +13,7 @@ import torch
 from networks.stochastic_critic_td3 import Actor
 from networks.stochastic_critic_td3 import Stochastic_Critic as Critic
 
+
 class STC_TD3(object):
     def __init__(self,
                  observation_size=10,
@@ -42,6 +43,9 @@ class STC_TD3(object):
 
         # Ensemble of target critics
         self.target_ensemble_critics = copy.deepcopy(self.ensemble_critics).to(device)
+
+        #print(helpers.compare_models(self.ensemble_critics[2], self.target_ensemble_critics[2]))
+
 
         lr_ensemble_critic = 1e-3
         self.ensemble_critics_optimizers = [torch.optim.Adam(self.ensemble_critics[i].parameters(), lr=lr_ensemble_critic) for i in range(self.ensemble_size)]
@@ -114,21 +118,20 @@ class STC_TD3(object):
                     fusion_u, fusion_std = self.fusion_kalman(fusion_std, fusion_u, std_2, x_2)
             # -----------------------------------------#
 
-            # mean value
-            # -------------------------------------------------------------------------------------------------#
-            # average the distributions to create a unique distribution, encapsulating the whole outputs
-            # note, this is not a mixture of gaussians,
-            # problem with avr= too much protagonism could be given a curve with terrible std and while could be others with small std
-            # and if we take the avg we will compute this equally
-            # u_aver   = torch.mean(torch.concat(u_set, dim=1), dim=1).unsqueeze(0).reshape(batch_size, 1)
-            # std_aver = torch.mean(torch.concat(std_set, dim=1), dim=1).unsqueeze(0).reshape(batch_size, 1)
-            # -------------------------------------------------------------------------------------------------#
+        #     # mean value
+        #     # -------------------------------------------------------------------------------------------------#
+        #     # average the distributions to create a unique distribution, encapsulating the whole outputs
+        #     # note, this is not a mixture of gaussians,
+        #     # problem with avr= too much protagonism could be given a curve with terrible std and while could be others with small std
+        #     # and if we take the avg we will compute this equally
+        #     # u_aver   = torch.mean(torch.concat(u_set, dim=1), dim=1).unsqueeze(0).reshape(batch_size, 1)
+        #     # std_aver = torch.mean(torch.concat(std_set, dim=1), dim=1).unsqueeze(0).reshape(batch_size, 1)
+        #     # -------------------------------------------------------------------------------------------------#
 
             # Create the target distribution = aX+b
             u_target   =  rewards +  self.gamma * fusion_u * (1 - dones)
             std_target =  self.gamma * fusion_std
             target_distribution = torch.distributions.normal.Normal(u_target, std_target)
-
 
         for critic_net, critic_net_optimiser in zip(self.ensemble_critics, self.ensemble_critics_optimizers):
             u_current, std_current = critic_net(states, actions)
@@ -142,7 +145,6 @@ class STC_TD3(object):
             critic_individual_loss.backward()
             critic_net_optimiser.step()
 
-
         if self.learn_counter % self.policy_update_freq == 0:  # todo try if i change the freq update
             actor_q_u_set   = []
             actor_q_std_set = []
@@ -150,10 +152,6 @@ class STC_TD3(object):
                 actor_q_u, actor_q_std = critic_net(states, self.actor_net(states))
                 actor_q_u_set.append(actor_q_u)
                 actor_q_std_set.append(actor_q_std)
-
-            # mean of the means of each critic
-            # actor_q_u_aver = torch.mean(torch.concat(actor_q_u_set, dim=1), dim=1).unsqueeze(0).reshape(batch_size, 1)
-            # actor_loss     = -actor_q_u_aver.mean()
 
             # kalman filter combination of all critics and then a single mean
             for i in range (len (actor_q_u_set) - 1):
@@ -166,9 +164,11 @@ class STC_TD3(object):
                     fusion_u_a, fusion_std_a = self.fusion_kalman(fusion_std_a, fusion_u_a, std_2_a, x_2_a)
 
             actor_loss  = -fusion_u_a.mean()
+            logging.info(fusion_u_a)
 
             # Update Actor
             self.actor_net_optimiser.zero_grad()
+            logging.info(actor_loss)
             actor_loss.backward()
             self.actor_net_optimiser.step()
 
