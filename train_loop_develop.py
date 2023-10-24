@@ -14,9 +14,7 @@ logging.basicConfig(level=logging.INFO)
 from dm_control import suite
 
 from cares_reinforcement_learning.util import MemoryFactory
-#from memory import MemoryBuffer
 
-#from algorithm import TD3
 from algorithm import STC_TD3
 
 def define_parse_args():

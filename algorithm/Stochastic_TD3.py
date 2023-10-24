@@ -44,9 +44,6 @@ class STC_TD3(object):
         # Ensemble of target critics
         self.target_ensemble_critics = copy.deepcopy(self.ensemble_critics).to(device)
 
-        #print(helpers.compare_models(self.ensemble_critics[2], self.target_ensemble_critics[2]))
-
-
         lr_ensemble_critic = 1e-3
         self.ensemble_critics_optimizers = [torch.optim.Adam(self.ensemble_critics[i].parameters(), lr=lr_ensemble_critic) for i in range(self.ensemble_size)]
         #-----------------------------------------#
@@ -66,6 +63,7 @@ class STC_TD3(object):
         self.actor_net.train()
         return action
 
+
     def fusion_kalman(self, std_1, mean_1, std_2, mean_2):
         kalman_gain     = (std_1 ** 2) / (std_1 ** 2 + std_2 ** 2)
         fusion_mean     = mean_1 + kalman_gain * (mean_2 - mean_1)
@@ -75,7 +73,6 @@ class STC_TD3(object):
 
 
     def train_policy(self, experiences):
-
         self.learn_counter += 1
 
         states, actions, rewards, next_states, dones = experiences
@@ -133,6 +130,7 @@ class STC_TD3(object):
             std_target =  self.gamma * fusion_std
             target_distribution = torch.distributions.normal.Normal(u_target, std_target)
 
+
         for critic_net, critic_net_optimiser in zip(self.ensemble_critics, self.ensemble_critics_optimizers):
             u_current, std_current = critic_net(states, actions)
             current_distribution   = torch.distributions.normal.Normal(u_current, std_current)
@@ -164,11 +162,9 @@ class STC_TD3(object):
                     fusion_u_a, fusion_std_a = self.fusion_kalman(fusion_std_a, fusion_u_a, std_2_a, x_2_a)
 
             actor_loss  = -fusion_u_a.mean()
-            logging.info(fusion_u_a)
 
             # Update Actor
             self.actor_net_optimiser.zero_grad()
-            logging.info(actor_loss)
             actor_loss.backward()
             self.actor_net_optimiser.step()
 
@@ -180,6 +176,7 @@ class STC_TD3(object):
             # Update target actor
             for target_param, param in zip(self.target_actor_net.parameters(), self.actor_net.parameters()):
                 target_param.data.copy_(param.data * self.tau + target_param.data * (1.0 - self.tau))
+
 
     def save_models(self, filename, filepath='models'):
         path = f"{filepath}/models" if filepath != 'models' else filepath
