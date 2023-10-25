@@ -9,6 +9,7 @@ import copy
 import logging
 import numpy as np
 import torch
+import math
 
 from networks.stochastic_critic_td3 import Actor
 from networks.stochastic_critic_td3 import Stochastic_Critic as Critic
@@ -31,6 +32,8 @@ class STC_TD3(object):
         self.action_num         = action_num
         self.device             = device
 
+        self.observation_size = observation_size
+
         self.actor_net        = Actor(observation_size=observation_size, action_num = action_num).to(device)
         self.target_actor_net = copy.deepcopy(self.actor_net).to(device)
 
@@ -42,6 +45,7 @@ class STC_TD3(object):
         self.ensemble_critics = torch.nn.ModuleList()
         critics = [Critic(observation_size=observation_size, action_num = action_num) for _ in range(self.ensemble_size)]
         self.ensemble_critics.extend(critics)
+        print(len(self.ensemble_critics))
         self.ensemble_critics.to(device)
 
         # Ensemble of target critics
@@ -58,12 +62,20 @@ class STC_TD3(object):
             state_tensor = state_tensor.unsqueeze(0)
             action = self.actor_net(state_tensor)
             action = action.cpu().data.numpy().flatten()
+            if math.isnan(action[0]):
+                logging.error(f"State 0: {state} {self.observation_size} {self.action_num}")
             if not evaluation:
                 # this is part the TD3 too, add noise to the action
                 noise  = np.random.normal(0, scale=noise_scale, size=self.action_num)
                 action = action + noise
+                if math.isnan(action[0]):
+                    logging.error(f"State 1: {state} {noise}")
                 action = np.clip(action, -1, 1)
+                if math.isnan(action[0]):
+                    logging.error(f"State 2: {state}")
         self.actor_net.train()
+        if math.isnan(action[0]):
+            logging.error(f"State 3: {state}")
         return action
 
 

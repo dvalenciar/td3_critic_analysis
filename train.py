@@ -26,7 +26,6 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 
 class STC_TD3Config(AlgorithmConfig):
-
     algorithm: str = Field("STC_TD3", Literal=True)
     actor_lr: Optional[float] = 1e-4
     critic_lr: Optional[float] = 1e-3
@@ -64,37 +63,30 @@ def main():
               observation_size=env.observation_space,
               action_num=env.action_num,
               device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'),
-              ensemble_size=alg_config.ensemble_size,
-              actor_lr=alg_config.actor_lr,
-              critic_lr=alg_config.critic_lr
-
-
+              ensemble_size=alg_config.ensemble_size
         )
-        else:
-            raise ValueError(f"Unkown agent for default algorithms {alg_config.algorithm}")
-
+        
         # TODO manage arguements for future memory types
         memory = memory_factory.create_memory(alg_config.memory, args=[])
         logging.info(f"Memory: {alg_config.memory}")
 
         #create the record class - standardised results tracking
         log_dir = f"{seed}"
-        record = Record(glob_log_dir=glob_log_dir,
-                        log_dir=log_dir,
-                        algorithm=alg_config.algorithm,
-                        task=env_config.task,
-                        network=agent,
-                        plot_frequency=training_config.plot_frequency,
+        record = Record(glob_log_dir=glob_log_dir, 
+                        log_dir=log_dir, 
+                        algorithm=alg_config.algorithm, 
+                        task=env_config.task, 
+                        network=agent, 
+                        plot_frequency=training_config.plot_frequency, 
                         checkpoint_frequency=training_config.checkpoint_frequency)
         record.save_config(env_config, "env_config")
         record.save_config(training_config, "train_config")
         record.save_config(alg_config, "alg_config")
-
+    
         # Train the policy or value based approach
-        pbe.policy_based_train(env, agent, memory, record, training_config)
-
+        pbe.policy_based_train(env, agent, memory, record, training_config, alg_config)
+        
         record.save()
-
 
 if __name__ == '__main__':
     main()
