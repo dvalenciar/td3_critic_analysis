@@ -65,9 +65,7 @@ def main():
               device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'),
               ensemble_size=alg_config.ensemble_size
         )
-        else:
-            raise ValueError(f"Unkown agent for default algorithms {alg_config.algorithm}")
-
+        
         # TODO manage arguements for future memory types
         memory = memory_factory.create_memory(alg_config.memory, args=[])
         logging.info(f"Memory: {alg_config.memory}")
@@ -86,11 +84,9 @@ def main():
         record.save_config(alg_config, "alg_config")
     
         # Train the policy or value based approach
-        pbe.policy_based_train(env, agent, memory, record, training_config)
+        pbe.policy_based_train(env, agent, memory, record, training_config, alg_config)
         
         record.save()
-        
-        seed += 10
 
 if __name__ == '__main__':
     main()
