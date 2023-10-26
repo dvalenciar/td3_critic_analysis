@@ -37,10 +37,18 @@ class STC_TD3Config(AlgorithmConfig):
     
     memory: Optional[str] = "MemoryBuffer"
 
+    min_noise: Optional[int] = 0.1
+    noise_decay: Optional[int] = 1
+    noise_scale: Optional[int] = 0.1
+
 def main():
     parser = RLParser()
     parser.add_algorithm(STC_TD3Config)
-    env_config, training_config, alg_config = parser.parse_args()
+    
+    configurations = parser.parse_args()
+    env_config = configurations["env_config"] 
+    training_config = configurations["training_config"]
+    alg_config = configurations["algorithm_config"]
     
     env_factory = EnvironmentFactory()
     network_factory = NetworkFactory()
