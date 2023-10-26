@@ -19,7 +19,10 @@ class STC_TD3(object):
                  observation_size=10,
                  action_num=2,
                  device='cuda',
-                 ensemble_size=2):
+                 ensemble_size=2,
+                 actor_lr=1e-4,
+                 critic_lr=1e-3,
+                 ):
 
         self.gamma = 0.99
         self.tau   = 0.005
@@ -31,7 +34,7 @@ class STC_TD3(object):
         self.actor_net        = Actor(observation_size=observation_size, action_num = action_num).to(device)
         self.target_actor_net = copy.deepcopy(self.actor_net).to(device)
 
-        lr_actor   = 1e-4
+        lr_actor   = actor_lr
         self.actor_net_optimiser = torch.optim.Adam(self.actor_net.parameters(), lr=lr_actor)
 
         # ------------- Ensemble of critics ------------------#
@@ -44,7 +47,7 @@ class STC_TD3(object):
         # Ensemble of target critics
         self.target_ensemble_critics = copy.deepcopy(self.ensemble_critics).to(device)
 
-        lr_ensemble_critic = 1e-3
+        lr_ensemble_critic = critic_lr
         self.ensemble_critics_optimizers = [torch.optim.Adam(self.ensemble_critics[i].parameters(), lr=lr_ensemble_critic) for i in range(self.ensemble_size)]
         #-----------------------------------------#
 

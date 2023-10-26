@@ -26,6 +26,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 
 class STC_TD3Config(AlgorithmConfig):
+
     algorithm: str = Field("STC_TD3", Literal=True)
     actor_lr: Optional[float] = 1e-4
     critic_lr: Optional[float] = 1e-3
@@ -63,7 +64,11 @@ def main():
               observation_size=env.observation_space,
               action_num=env.action_num,
               device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'),
-              ensemble_size=alg_config.ensemble_size
+              ensemble_size=alg_config.ensemble_size,
+              actor_lr=alg_config.actor_lr,
+              critic_lr=alg_config.critic_lr
+
+
         )
         else:
             raise ValueError(f"Unkown agent for default algorithms {alg_config.algorithm}")
