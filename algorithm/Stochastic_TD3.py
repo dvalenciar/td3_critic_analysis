@@ -45,7 +45,6 @@ class STC_TD3(object):
         self.ensemble_critics = torch.nn.ModuleList()
         critics = [Critic(observation_size=observation_size, action_num = action_num) for _ in range(self.ensemble_size)]
         self.ensemble_critics.extend(critics)
-        print(len(self.ensemble_critics))
         self.ensemble_critics.to(device)
 
         # Ensemble of target critics
