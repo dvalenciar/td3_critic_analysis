@@ -70,7 +70,7 @@ class STC_TD3(object):
     def fusion_kalman(self, std_1, mean_1, std_2, mean_2):
         kalman_gain     = (std_1 ** 2) / (std_1 ** 2 + std_2 ** 2)
         fusion_mean     = mean_1 + kalman_gain * (mean_2 - mean_1)
-        fusion_variance = (1 - kalman_gain) * std_1 ** 2
+        fusion_variance = (1 - kalman_gain) * (std_1 ** 2)
         fusion_std      = torch.sqrt(fusion_variance)
         return fusion_mean, fusion_std
 
@@ -106,7 +106,7 @@ class STC_TD3(object):
                 u_set.append(u)
                 std_set.append(std)
 
-            # -------- Key part here -------------- #
+            # # -------- Key part here -------------- #
             # Kalman Filter
             for i in range (len (u_set) - 1):
                 if i == 0:
@@ -147,6 +147,13 @@ class STC_TD3(object):
             critic_net_optimiser.step()
 
         if self.learn_counter % self.policy_update_freq == 0:  # todo try if i change the freq update
+            u_set   = []
+            std_set = []
+            for target_critic_net in self.target_ensemble_critics:
+                u, std = target_critic_net(next_states, next_actions)
+                u_set.append(u)
+                std_set.append(std)
+
             actor_q_u_set   = []
             actor_q_std_set = []
             for critic_net in self.ensemble_critics:
@@ -154,7 +161,7 @@ class STC_TD3(object):
                 actor_q_u_set.append(actor_q_u)
                 actor_q_std_set.append(actor_q_std)
 
-            # kalman filter combination of all critics and then a single mean
+            # kalman filter combination of all critics and then a single mean for the actor loss
             for i in range (len (actor_q_u_set) - 1):
                 if i == 0:
                     x_1_a , std_1_a = actor_q_u_set[i], actor_q_std_set[i]

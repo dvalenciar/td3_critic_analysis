@@ -7,7 +7,7 @@ class Stochastic_Critic(nn.Module):
         super(Stochastic_Critic, self).__init__()
 
 
-        self.hidden_size = [1024, 1024]
+        self.hidden_size = [256, 256]
 
         self.mean_layer = nn.Sequential(
             nn.Linear(observation_size + action_num, self.hidden_size[0]),
